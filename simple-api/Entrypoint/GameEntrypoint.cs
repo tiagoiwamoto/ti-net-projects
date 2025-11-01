@@ -25,10 +25,9 @@ public class GameEntrypoint : ControllerBase{
         return response;
     }
 
-    // New endpoint that demonstrates Strategy usage
-    // Example: GET /api/v1/games/by-console?consoleType=Nintendo
+    // Example: GET /api/v1/games/by-console?console=Nintendo
     [HttpGet("by-console")]
-    public ActionResult<DataResponse<GameResponse>> GetByConsole([FromQuery] string consoleType)
+    public ActionResult<DataResponse<GameResponse>> GetByConsole([FromQuery(Name = "console")] string consoleType)
     {
         var strategy = _factory.Resolve(consoleType);
         if (strategy == null)
