@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using simple_api.adapter;
 using simple_api.Controllers.dto;
 using simple_api.Core.Strategy;
 
@@ -58,8 +59,8 @@ public class GameEntrypoint : ControllerBase{
     }
     
     [HttpPost(Name = "CadastrarGame")]
-    public ActionResult<DataResponse<GameResponse>> CadastrarGame([FromBody] GameRequest request) {
-        _logger.LogInformation("CadastrarGame called with request={Request}", request);
+    public ActionResult<DataResponse<GameResponse>> CadastrarGame([FromBody] GameRequest request)
+    {
         var response = new GameResponse(
             nome: request.nome,
             descricao: request.descricao,
@@ -67,11 +68,15 @@ public class GameEntrypoint : ControllerBase{
             consoleType: request.consoleType,
             preco: request.preco
         );
-        return Ok( new DataResponse<GameResponse>(
-            data: response,
-            message: "Game cadastrado com sucesso",
-            statusCode: 201
-        ));
+        var agencia = Mdc.Get("agencia");
+        _logger.LogInformation("Agencia no cadastro de game: {Agencia}", agencia);
+        return Created(new Uri("api/v1/games/by-console/" + request.consoleType, UriKind.Relative),
+            new DataResponse<GameResponse>(
+                data: response,
+                message: "Game cadastrado com sucesso",
+                statusCode: 201
+            )
+        );
     }
     
     
