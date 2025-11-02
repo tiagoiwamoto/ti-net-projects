@@ -8,11 +8,13 @@ namespace simple_api.Controllers;
 [Route("/api/v1/games")]
 public class GameEntrypoint : ControllerBase{
 
-    private readonly ConsoleStrategyFactory _factory;
+    private readonly ILogger<GameEntrypoint> _logger;
+    private readonly IEnumerable<ConsoleStrategy> _strategies;
 
-    public GameEntrypoint(ConsoleStrategyFactory factory)
+    public GameEntrypoint(ILogger<GameEntrypoint> logger,IEnumerable<ConsoleStrategy> strategies)
     {
-        _factory = factory;
+        _logger = logger;
+        _strategies = strategies;
     }
     
     [HttpGet(Name = "RecuperarGames")]
@@ -29,7 +31,8 @@ public class GameEntrypoint : ControllerBase{
     [HttpGet("by-console")]
     public ActionResult<DataResponse<GameResponse>> GetByConsole([FromQuery(Name = "console")] string consoleType)
     {
-        var strategy = _factory.Resolve(consoleType);
+        _logger.LogInformation("GetByConsole called with console={ConsoleType}", consoleType);
+        var strategy = _strategies.First(s => s.supports(consoleType));
         if (strategy == null)
         {
             return NotFound(new DataResponse<GameResponse>(data: null, message: "Console não suportado", statusCode: 404));
@@ -38,5 +41,39 @@ public class GameEntrypoint : ControllerBase{
         var game = strategy.Execute();
         return Ok(new DataResponse<GameResponse>(data: game, message: "Sucesso", statusCode: 200));
     }
+    
+    // Example: GET /api/v1/games/by-console/Nintendo
+    [HttpGet("by-console/{console}")]
+    public ActionResult<DataResponse<GameResponse>> GetByConsolePath([FromRoute(Name = "console")] string consoleType)
+    {
+        _logger.LogInformation("GetByConsole called with console={ConsoleType}", consoleType);
+        var strategy = _strategies.FirstOrDefault(s => s.supports(consoleType));
+        if (strategy == null)
+        {
+            return NotFound(new DataResponse<GameResponse>(data: null, message: "Console não suportado", statusCode: 404));
+        }
+
+        var game = strategy.Execute();
+        return Ok(new DataResponse<GameResponse>(data: game, message: "Sucesso", statusCode: 200));
+    }
+    
+    [HttpPost(Name = "CadastrarGame")]
+    public ActionResult<DataResponse<GameResponse>> CadastrarGame([FromBody] GameRequest request) {
+        _logger.LogInformation("CadastrarGame called with request={Request}", request);
+        var response = new GameResponse(
+            nome: request.nome,
+            descricao: request.descricao,
+            image: request.image,
+            consoleType: request.consoleType,
+            preco: request.preco
+        );
+        return Ok( new DataResponse<GameResponse>(
+            data: response,
+            message: "Game cadastrado com sucesso",
+            statusCode: 201
+        ));
+    }
+    
+    
     
 }
