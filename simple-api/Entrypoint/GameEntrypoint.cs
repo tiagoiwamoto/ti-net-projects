@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using simple_api.adapter;
 using simple_api.Controllers.dto;
 using simple_api.Core.Strategy;
+using simple_api.Core.Usecase;
 
 namespace simple_api.Controllers;
 
@@ -11,11 +12,14 @@ public class GameEntrypoint : ControllerBase{
 
     private readonly ILogger<GameEntrypoint> _logger;
     private readonly IEnumerable<ConsoleStrategy> _strategies;
+    private readonly GameUsecase _gameUsecase;
+    
 
-    public GameEntrypoint(ILogger<GameEntrypoint> logger,IEnumerable<ConsoleStrategy> strategies)
+    public GameEntrypoint(ILogger<GameEntrypoint> logger,IEnumerable<ConsoleStrategy> strategies, GameUsecase gameUsecase)
     {
         _logger = logger;
         _strategies = strategies;
+        _gameUsecase = gameUsecase;
     }
     
     [HttpGet(Name = "RecuperarGames")]
@@ -70,6 +74,10 @@ public class GameEntrypoint : ControllerBase{
         );
         var agencia = Mdc.Get("agencia");
         _logger.LogInformation("Agencia no cadastro de game: {Agencia}", agencia);
+        
+        var games = _gameUsecase.GetGameDataAsync("some-id", "apiA").Result;
+        _logger.LogInformation("Dados obtidos no cadastro de game: {Games}", games);
+        
         return Created(new Uri("api/v1/games/by-console/" + request.consoleType, UriKind.Relative),
             new DataResponse<GameResponse>(
                 data: response,
